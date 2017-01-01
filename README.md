@@ -91,7 +91,22 @@ Installation
 Usage
 -----
 
-Include this like you would include any other plugin.
+Include this like you would include any other plugin.  Here's a CLI example that also shows the default options.  You don't need to specify any of these unless you want to change its value.
+
+    {
+        "plugins": {
+            "metalsmith-ancestry": {
+                "ancestryProperty": "ancestry",
+                "match": "**/*",
+                "matchOptions": {},
+                "reverse": false,
+                "sortBy": null,
+                "sortFilesFirst": "**/index.{htm,html,jade,md}"
+            }
+        }
+    }
+
+And this is how you use it in JavaScript, with a small description of each option.
 
     // Load this, just like other plugins.
     var ancestry = require("metalsmith-ancestry");
