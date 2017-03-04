@@ -1,6 +1,6 @@
 {
     "name": "metalsmith-ancestry",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "Metalsmith plugin that establishes a family based on the files and folder structure in your source.",
     "tags": [
         "metalsmith",
@@ -12,8 +12,8 @@
     ],
     "main": "lib/index.js",
     "scripts": {
-        "test": "istanbul cover jasmine-node --captureExceptions lib spec && eslint lib spec && codecov",
-        "watch": "jasmine-node --autotest lib spec"
+        "test": "istanbul cover jasmine && eslint . && codecov",
+        "watch": "nodemon --exec jasmine"
     },
     "repository": {
         "type": "git",
@@ -26,12 +26,13 @@
     },
     "homepage": "https://github.com/tests-always-included/metalsmith-ancestry#readme",
     "dependencies": {
-        "minimatch": "^3.0.3"
+        "minimatch": "~3.0.3"
     },
     "devDependencies": {
-        "codecov": "^1.0.1",
-        "eslint": "^3.13.1",
-        "istanbul": "^0.4.5",
-        "jasmine-node": "^1.14.5"
+        "codecov": "~1.0.1",
+        "eslint": "~3.16.1",
+        "istanbul": "~0.4.5",
+        "jasmine": "~2.5.3",
+        "nodemon": "~1.11.0"
     }
 }

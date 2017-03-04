@@ -2,6 +2,81 @@
 
 describe("metalsmith-ancestry", function () {
     /**
+     * If the passed in object is a value in the files object, then
+     * return the matching key.
+     *
+     * @param {Object} files
+     * @param {Object} value
+     * @return {(string|null)}
+     */
+    function getMatchingFilename(files, value) {
+        var i, keys;
+
+        keys = Object.keys(files);
+
+        for (i = 0; i < keys.length; i += 1) {
+            if (files[keys[i]] === value) {
+                return keys[i];
+            }
+        }
+
+        return null;
+    }
+
+
+    /**
+     * Removes circular references to file objects in a breadth-first manner.
+     * When a reference to a file is found, it is replaced with a string
+     * of "«filename»".
+     *
+     * @param {Object} files
+     */
+    function uncircular(files) {
+        var item, list;
+
+        /**
+         * Process an item in the list. If the value is not an object,
+         * skip. If the value is in the files array, replace. Otherwise
+         * we add all properties back to the end of the list.
+         *
+         * Breadth first search.
+         *
+         * @param {string} key
+         */
+        function processItem(key) {
+            var filename, value;
+
+            value = item[key];
+
+            if (!value || typeof value !== "object") {
+                // Not an object. Skip.
+                return;
+            }
+
+            filename = getMatchingFilename(files, value);
+
+            if (filename) {
+                item[key] = "«" + filename + "»";
+            } else {
+                list.push(value);
+            }
+        }
+
+        // Populate the initial list of objects to cover.
+        list = Object.keys(files).map(function (key) {
+            return files[key];
+        }).filter(function (value) {
+            return value && typeof value === "object";
+        });
+
+        while (list.length) {
+            item = list.shift();
+            Object.keys(item).forEach(processItem);
+        }
+    }
+
+
+    /**
      * Runs the plugin against a list of files.
      *
      * @param {Object} files
@@ -12,7 +87,15 @@ describe("metalsmith-ancestry", function () {
 
         plugin = require("..");
         plugin(options)(files, null, function () {});
+
+        /* Due to the circular references, viewing this object is a royal
+         * PAIN IN THE BUTT with hundreds of screenfuls of objects being
+         * dumped. Instead of doing that, let's change all circular references
+         * to other file object into that file object itself.
+         */
+        uncircular(files);
     }
+
 
     describe("option handling", function () {
         describe("with defaults", function () {
@@ -42,59 +125,94 @@ describe("metalsmith-ancestry", function () {
             });
             it("sets children", function () {
                 expect(files["index.html"].ancestry.children).toEqual([
-                    files["test/index.md"]
+                    "«test/index.md»"
                 ]);
                 expect(files["test/index.md"].ancestry.children).toEqual([
-                    files["test/folder/index.jade"],
-                    files["test/folder2/index.htm"]
+                    "«test/folder/index.jade»",
+                    "«test/folder2/index.htm»"
                 ]);
                 expect(files["test/folder/index.jade"].ancestry.children).toBe(null);
                 expect(files["test/folder2/index.htm"].ancestry.children).toBe(null);
             });
-            it("sets first", function () {
-                expect(files["index.html"].ancestry.first).toBe(files["index.html"]);
-                expect(files["test/image.gif"].ancestry.first).toBe(files["test/index.md"]);
+            it("sets firstChild", function () {
+                expect(files["index.html"].ancestry.firstChild).toBe("«test/index.md»");
+                expect(files["test/image.gif"].ancestry.firstChild).toBe("«test/folder/index.jade»");
+                expect(files["test/folder/index.jade"].ancestry.firstChild).toBe(null);
             });
-            it("sets last", function () {
-                expect(files["index.html"].ancestry.last).toBe(files["index.html"]);
-                expect(files["test/image.gif"].ancestry.last).toBe(files["test/thing.htm"]);
+            it("sets firstMember", function () {
+                expect(files["index.html"].ancestry.firstMember).toBe("«index.html»");
+                expect(files["test/image.gif"].ancestry.firstMember).toBe("«test/index.md»");
             });
-            it("sets next", function () {
-                expect(files["index.html"].ancestry.next).toBe(null);
-                expect(files["test/index.md"].ancestry.next).toBe(files["test/image.gif"]);
-                expect(files["test/image.gif"].ancestry.next).toBe(files["test/page.html"]);
-                expect(files["test/page.html"].ancestry.next).toBe(files["test/thing.htm"]);
-                expect(files["test/thing.htm"].ancestry.next).toBe(null);
+            it("sets firstSibling", function () {
+                expect(files["test/folder2/big.html"].ancestry.firstSibling).toBe("«test/folder/index.jade»");
+                expect(files["test/index.md"].ancestry.firstSibling).toBe("«test/index.md»");
+            });
+            it("sets lastChild", function () {
+                expect(files["index.html"].ancestry.lastChild).toBe("«test/index.md»");
+                expect(files["test/image.gif"].ancestry.lastChild).toBe("«test/folder2/index.htm»");
+                expect(files["test/folder/index.jade"].ancestry.lastChild).toBe(null);
+            });
+            it("sets lastMember", function () {
+                expect(files["index.html"].ancestry.lastMember).toBe("«index.html»");
+                expect(files["test/image.gif"].ancestry.lastMember).toBe("«test/thing.htm»");
+            });
+            it("sets lastSibling", function () {
+                expect(files["test/folder/index.jade"].ancestry.lastSibling).toBe("«test/folder2/index.htm»");
+                expect(files["test/index.md"].ancestry.lastSibling).toBe("«test/index.md»");
+            });
+            it("sets members", function () {
+                expect(files["index.html"].ancestry.members).toEqual([
+                    "«index.html»"
+                ]);
+                expect(files["test/image.gif"].ancestry.members).toEqual([
+                    "«test/index.md»",
+                    "«test/image.gif»",
+                    "«test/page.html»",
+                    "«test/thing.htm»"
+                ]);
+            });
+            it("sets nextMember", function () {
+                expect(files["index.html"].ancestry.nextMember).toBe(null);
+                expect(files["test/index.md"].ancestry.nextMember).toBe("«test/image.gif»");
+                expect(files["test/image.gif"].ancestry.nextMember).toBe("«test/page.html»");
+                expect(files["test/page.html"].ancestry.nextMember).toBe("«test/thing.htm»");
+                expect(files["test/thing.htm"].ancestry.nextMember).toBe(null);
+            });
+            it("sets nextSibling", function () {
+                expect(files["test/folder/index.jade"].ancestry.nextSibling).toBe("«test/folder2/index.htm»");
+                expect(files["test/index.md"].ancestry.nextSibling).toBe(null);
             });
             it("sets parent", function () {
                 expect(files["index.html"].ancestry.parent).toBe(null);
-                expect(files["test/index.md"].ancestry.parent).toBe(files["index.html"]);
-                expect(files["test/image.gif"].ancestry.parent).toBe(files["index.html"]);
+                expect(files["test/index.md"].ancestry.parent).toBe("«index.html»");
+                expect(files["test/image.gif"].ancestry.parent).toBe("«index.html»");
             });
             it("sets path", function () {
                 expect(files["index.html"].ancestry.path).toEqual("index.html");
                 expect(files["test/index.md"].ancestry.path).toEqual("test/index.md");
             });
-            it("sets previous", function () {
-                expect(files["index.html"].ancestry.previous).toBe(null);
-                expect(files["test/index.md"].ancestry.previous).toBe(null);
-                expect(files["test/image.gif"].ancestry.previous).toBe(files["test/index.md"]);
-                expect(files["test/page.html"].ancestry.previous).toBe(files["test/image.gif"]);
-                expect(files["test/thing.htm"].ancestry.previous).toBe(files["test/page.html"]);
+            it("sets prevMember", function () {
+                expect(files["index.html"].ancestry.prevMember).toBe(null);
+                expect(files["test/index.md"].ancestry.prevMember).toBe(null);
+                expect(files["test/image.gif"].ancestry.prevMember).toBe("«test/index.md»");
+                expect(files["test/page.html"].ancestry.prevMember).toBe("«test/image.gif»");
+                expect(files["test/thing.htm"].ancestry.prevMember).toBe("«test/page.html»");
+            });
+            it("sets prevSibling", function () {
+                expect(files["test/folder2/index.htm"].ancestry.prevSibling).toBe("«test/folder/index.jade»");
+                expect(files["test/index.md"].ancestry.prevSibling).toBe(null);
             });
             it("sets self", function () {
-                expect(files["index.html"].ancestry.self).toBe(files["index.html"]);
-                expect(files["test/thing.htm"].ancestry.self).toBe(files["test/thing.htm"]);
+                expect(files["index.html"].ancestry.self).toBe("«index.html»");
+                expect(files["test/thing.htm"].ancestry.self).toBe("«test/thing.htm»");
             });
             it("sets siblings", function () {
-                expect(files["index.html"].ancestry.siblings).toEqual([
-                    files["index.html"]
-                ]);
                 expect(files["test/image.gif"].ancestry.siblings).toEqual([
-                    files["test/index.md"],
-                    files["test/image.gif"],
-                    files["test/page.html"],
-                    files["test/thing.htm"]
+                    "«test/index.md»"
+                ]);
+                expect(files["test/folder/index.jade"].ancestry.siblings).toEqual([
+                    "«test/folder/index.jade»",
+                    "«test/folder2/index.htm»"
                 ]);
             });
         });
@@ -152,14 +270,14 @@ describe("metalsmith-ancestry", function () {
                 runPlugin(files, {
                     reverse: true
                 });
-                expect(files.a.ancestry.siblings).toEqual([
-                    files.b,
-                    files.a
+                expect(files.a.ancestry.members).toEqual([
+                    "«b»",
+                    "«a»"
                 ]);
-                expect(files.a.ancestry.first).toEqual(files.b);
-                expect(files.a.ancestry.last).toEqual(files.a);
-                expect(files.a.ancestry.next).toEqual(null);
-                expect(files.a.ancestry.previous).toEqual(files.b);
+                expect(files.a.ancestry.firstMember).toEqual("«b»");
+                expect(files.a.ancestry.lastMember).toEqual("«a»");
+                expect(files.a.ancestry.nextMember).toEqual(null);
+                expect(files.a.ancestry.prevMember).toEqual("«b»");
             });
         });
         describe("sortBy", function () {
@@ -182,10 +300,10 @@ describe("metalsmith-ancestry", function () {
                         return a.order - b.order;
                     }
                 });
-                expect(files.a.ancestry.siblings).toEqual([
-                    files.a,
-                    files.c,
-                    files.b
+                expect(files.a.ancestry.members).toEqual([
+                    "«a»",
+                    "«c»",
+                    "«b»"
                 ]);
             });
             it("sorts with a single property", function () {
@@ -205,10 +323,10 @@ describe("metalsmith-ancestry", function () {
                 runPlugin(files, {
                     sortBy: "order"
                 });
-                expect(files.a.ancestry.siblings).toEqual([
-                    files.a,
-                    files.c,
-                    files.b
+                expect(files.a.ancestry.members).toEqual([
+                    "«a»",
+                    "«c»",
+                    "«b»"
                 ]);
             });
             it("sorts with multiple properties", function () {
@@ -238,10 +356,10 @@ describe("metalsmith-ancestry", function () {
                         "third"
                     ]
                 });
-                expect(files.a.ancestry.siblings).toEqual([
-                    files.c,
-                    files.a,
-                    files.b
+                expect(files.a.ancestry.members).toEqual([
+                    "«c»",
+                    "«a»",
+                    "«b»"
                 ]);
             });
         });
@@ -254,9 +372,7 @@ describe("metalsmith-ancestry", function () {
              * @return {string}
              */
             function fileOrder() {
-                return files.a.ancestry.siblings.map(function (fileObject) {
-                    return fileObject.name;
-                }).join(",");
+                return files.a.ancestry.members.join(",");
             }
 
             beforeEach(function () {
@@ -281,7 +397,7 @@ describe("metalsmith-ancestry", function () {
                 runPlugin(files, {
                     sortFilesFirst: null
                 });
-                expect(fileOrder()).toBe("a,b,c,d");
+                expect(fileOrder()).toBe("«a»,«b»,«c»,«d»");
             });
             it("does not sort with an empty array", function () {
                 // Really hard to test.  Mostly this is checking if the code
@@ -289,19 +405,19 @@ describe("metalsmith-ancestry", function () {
                 runPlugin(files, {
                     sortFilesFirst: []
                 });
-                expect(fileOrder()).toBe("a,b,c,d");
+                expect(fileOrder()).toBe("«a»,«b»,«c»,«d»");
             });
             it("uses a single string", function () {
                 runPlugin(files, {
                     sortFilesFirst: "b"
                 });
-                expect(fileOrder()).toBe("b,a,c,d");
+                expect(fileOrder()).toBe("«b»,«a»,«c»,«d»");
             });
             it("uses a RegExp", function () {
                 runPlugin(files, {
                     sortFilesFirst: /c/
                 });
-                expect(fileOrder()).toBe("c,a,b,d");
+                expect(fileOrder()).toBe("«c»,«a»,«b»,«d»");
             });
             it("uses a function", function () {
                 runPlugin(files, {
@@ -317,7 +433,7 @@ describe("metalsmith-ancestry", function () {
                         return 0;
                     }
                 });
-                expect(fileOrder()).toBe("b,a,c,d");
+                expect(fileOrder()).toBe("«b»,«a»,«c»,«d»");
             });
             it("uses an object with .test", function () {
                 runPlugin(files, {
@@ -327,7 +443,7 @@ describe("metalsmith-ancestry", function () {
                         }
                     }
                 });
-                expect(fileOrder()).toBe("c,a,b,d");
+                expect(fileOrder()).toBe("«c»,«a»,«b»,«d»");
             });
             it("uses an object with .match", function () {
                 runPlugin(files, {
@@ -337,7 +453,7 @@ describe("metalsmith-ancestry", function () {
                         }
                     }
                 });
-                expect(fileOrder()).toBe("c,a,b,d");
+                expect(fileOrder()).toBe("«c»,«a»,«b»,«d»");
             });
             it("uses an array of things", function () {
                 runPlugin(files, {
@@ -346,7 +462,7 @@ describe("metalsmith-ancestry", function () {
                         "d"
                     ]
                 });
-                expect(fileOrder()).toBe("b,d,a,c");
+                expect(fileOrder()).toBe("«b»,«d»,«a»,«c»");
             });
             it("throws when it can't figure out how to sort", function () {
                 expect(function () {

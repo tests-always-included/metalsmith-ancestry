@@ -16,48 +16,92 @@ What It Does
 All of the file objects are assigned an `.ancestry` property, which is an object that contains the following properties:
 
     fileObject.ancestry = {
+        // These refer to just the file object itself
         basename: "index.html",  // The base filename of the source file.
-        children: [ ... ],       // First member of sibling groups.
-        first: { ... },          // Same as .siblings[0].
-        last: { ... },           // Same as .siblings[siblings.length - 1].
-        next: { ... },           // Next sibling file object.
-        parent: { ... },         // Parent of this file object.
         path: "test/index.html", // Full name of the source file.
-        previous: { ... },       // Previous sibling file object.
         self: { ... },           // The file object that has this ancestry.
-        siblings: [ ... ]        // All members of this family.
+
+        // Up in the hierarchy.
+        parent: { ... },         // Parent of this file object. **
+
+        // Navigating member files of this folder.
+        members: [ ... ],        // All file objects in the same folder.
+        firstMember: { ... },    // The first member (same as .members[0]).
+        lastMember: { ... },     // The last member.
+        nextMember: { ... },     // The next member in the list.
+        prevMember: { ... },     // The previous member in the list.
+
+        // Jumping to other folders at the same level.
+        siblings: [ ... ],       // One file object per folder. **
+        firstSibling: { ... },   // The first sibling (same as .siblings[0]).
+        lastSibling: { ... },    // The last sibling.
+        nextSibling: { ... },    // The next sibling in the list.
+        prevSibling: { ... },    // The previous sibling in the list.
+
+        // Descending in the directory tree.
+        children: [ ... ],       // First member of each descendent. **
+        firstChild: { ... },     // The first child (same as .children[0]).
+        lastChild: { ... }       // The last child.
     }
 
-Using this object, you can navigate to other file objects that would be supplied to any Metalsmith plugin.  When you use [metalsmith-relative-links] and supply its link function a file object, it can return the URI necessary to link two resources together.
+`**` - These items are arrays that contain single file objects that "stand for" the entire folder. The file that is there is the first one sorted, so it would always appear as `.members[0]`. This is because one can not link to a folder because there are no folders in Metalsmith - only files.
+
+Using this `ancestry` object, you can navigate to other file objects that would be supplied to any Metalsmith plugin.  When you use [metalsmith-relative-links] and supply its link function a file object, it can return the URI necessary to link two resources together.
 
 All files in a directory tree are placed together.  Here's a sample directory listing.
 
     index.html
+    site.css
     about/index.html
     contact/index.html
     contact/email.html
     contact/in-person.html
+    contact/live-chat/index.html
+    contact/live-chat/chat.jar
+    contact/live-chat/chat.swf
+    contact/location/index.html
 
-If you were to inspect the `.ancestry` object that relates to `contact/email.html`, it would look something like this:
+If you were to inspect the `.ancestry` object that relates to `contact/email.html`, it would look something like the following. Please note that the example uses the shorthand `«filename»` to indicate we're linking to that specific file object.
 
     {
         basename: "email.html",
-        children: null,
-        first: { ... contact/index.html ... },
-        last: { ... contact/in-person.html ... },
-        next: { ... contact/in-person.html ... },
-        parent: { ... index.html ... },
         path: "contact/email.html",
-        previous: { ... contact/index.html ... },
-        self: { ... contact/index.html ... },
+        self: «contact/email.html»,
+
+        // Up in the hierarchy.
+        parent: «index.html»,
+
+        // Navigating member files of this folder.
+        members: [
+            «contact/index.html»
+            «contact/email.html»
+            «contact/in-person.html»
+        ],
+        firstMember: «contact/index.html»,
+        lastMember: «contact/in-person.html»,
+        nextMember: «contact/in-person.html»,
+        prevMember: «contact/index.html»,
+
+        // Jumping to other folders at the same level.
         siblings: [
-            { ... contact/index.html ...},
-            { ... contact/email.html ...},
-            { ... contact/in-person.html ...}
-        ]
+            «about/index.html»,
+            «contact/index.html»
+        ],
+        firstSibling: «about/index.html»,
+        lastSibling: «contact/index.html»,
+        nextSibling: null,
+        prevSibling: «about/index.html»,
+
+        // Descending in the directory tree.
+        children: [
+            «contact/live-chat/index.html»,
+            «contact/location/index.html»
+        },
+        firstChild: «contact/live-chat/index.html»,
+        lastChild: «contact/location/index.html»
     }
 
-Anywhere I cited `{ ... some-file ... }`, that is a link to the file object.  So, if you were processing a file and you had access to its metadata, then `.ancestry.self` would be pointing back at itself.  It's a circular link, so be very careful when you start dumping these objects to any logging system.
+A word of caution: if you were processing a file and you had access to its metadata, then `.ancestry.self` would be pointing back at itself.  It's a circular link, so be very careful when you start dumping these objects to any logging system.
 
 The real power shows up when you leverage these family links inside of your content.  Combining [metalsmith-hbt-md] and [metalsmith-relative-links], you can make a subpage listing.  This example uses files that have `title` and `summary` in their file's frontmatter.
 
@@ -72,12 +116,25 @@ If this was generated for the `index.html` within the above file tree, you would
 
 You could also use this for instruction pages or in a gallery.  If doing that, I would recommend [metalsmith-mustache-metadata]; this example requires that plugin to work.
 
-    {{#ancestry.previous?}}
-    [Previous](ancestry.link.to ancestry.previous)
-    {{/ancestry.previous?}}
-    {{#ancestry.next?}}
-    [Next](ancestry.link.to ancestry.next)
-    {{/ancestry.next?}}
+This is what you'd use if you jump from page to page in the same folder.
+
+    {{#ancestry.previousMember?}}
+    [Previous](ancestry.link.to ancestry.previousMember)
+    {{/ancestry.previousMember?}}
+
+    {{#ancestry.nextMember?}}
+    [Next](ancestry.link.to ancestry.nextMember)
+    {{/ancestry.nextMember?}}
+
+If you keep your pages separated into different folders, the syntax is almost identical.
+
+    {{#ancestry.previousSibling?}}
+    [Previous](ancestry.link.to ancestry.previousSibling)
+    {{/ancestry.previousSibling?}}
+
+    {{#ancestry.nextSibling?}}
+    [Next](ancestry.link.to ancestry.nextSibling)
+    {{/ancestry.nextSibling?}}
 
 
 Installation
@@ -140,7 +197,7 @@ And this is how you use it in JavaScript, with a small description of each optio
 This uses [minimatch] to match files.  The `.matchOptions` object can be filled with options that the [minimatch] library uses.
 
 
-### Sorting Siblings
+### Sorting Members
 
 This is the most complex portion of the code.  It is also the reason that sorting functions are exported with the plugin; those are covered later.
 
@@ -166,7 +223,7 @@ In addition, you can easily reverse the sort by setting `reverse: true` in the o
 
 ### Sorting Functions
 
-On the `ancestory` function are some sorting properties.
+On the `ancestory` function are some sorting properties. They are mostly exposed for easy testing but you are welcome to use them.
 
 **`sortFunction = ancestry.sortByProperty(name)`**
 
@@ -218,6 +275,15 @@ Returns the value from sorting two strings, case-insensitively.
     arr = [ "test1", "Table", "ta" ];
     arr.sort(ancestry.sortStrings);
     console.log(arr);  // [ "ta", "Table", "test1" ];
+
+
+Upgrading
+---------
+
+
+### 1.0.0 -> 1.1.0
+
+Properties were renamed in order to avoid confusion with additional functionality.  Change `.first`, `.last`, `.next` and`.previous` to `.firstMember`, `.lastMember`, `.nextMember` and `.prevMember`. Also, to make sure directories were the first-class citizens in the family tree, `.siblings` was renamed to `.members`.
 
 
 Development
