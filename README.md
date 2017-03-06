@@ -70,6 +70,7 @@ If you were to inspect the `.ancestry` object that relates to `contact/email.htm
 
         // Up in the hierarchy.
         parent: «index.html»,
+        root: «index.html»,
 
         // Navigating member files of this folder.
         members: [
@@ -279,6 +280,11 @@ Returns the value from sorting two strings, case-insensitively.
 
 Upgrading
 ---------
+
+
+### 1.1.0 -> 1.2.0
+
+Backwards compatible. Only added the `.root` property.
 
 
 ### 1.0.0 -> 1.1.0

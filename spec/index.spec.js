@@ -202,6 +202,11 @@ describe("metalsmith-ancestry", function () {
                 expect(files["test/folder2/index.htm"].ancestry.prevSibling).toBe("«test/folder/index.jade»");
                 expect(files["test/index.md"].ancestry.prevSibling).toBe(null);
             });
+            it("sets root", function () {
+                expect(files["index.html"].ancestry.root).toBe("«index.html»");
+                expect(files["test/thing.htm"].ancestry.root).toBe("«index.html»");
+                expect(files["test/folder2/index.htm"].ancestry.root).toBe("«index.html»");
+            });
             it("sets self", function () {
                 expect(files["index.html"].ancestry.self).toBe("«index.html»");
                 expect(files["test/thing.htm"].ancestry.self).toBe("«test/thing.htm»");
