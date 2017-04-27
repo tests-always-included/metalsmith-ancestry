@@ -1,6 +1,6 @@
 {
     "name": "metalsmith-ancestry",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "description": "Metalsmith plugin that establishes a family based on the files and folder structure in your source.",
     "tags": [
         "metalsmith",
@@ -29,7 +29,7 @@
         "minimatch": "~3.0.3"
     },
     "devDependencies": {
-        "codecov": "~1.0.1",
+        "codecov": "~2.1.0",
         "eslint": "~3.19.0",
         "istanbul": "~0.4.5",
         "jasmine": "~2.6.0",

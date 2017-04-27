@@ -485,7 +485,7 @@ describe("metalsmith-ancestry", function () {
             plugin = require("..");
         });
         describe("sortByProperty", function () {
-            it("sorts objects", function () {
+            it("sorts objects as strings", function () {
                 var list;
 
                 list = [
@@ -509,6 +509,63 @@ describe("metalsmith-ancestry", function () {
                     },
                     {
                         thing: "z"
+                    }
+                ]);
+            });
+            it("sorts objects with numbers", function () {
+                var list;
+
+                list = [
+                    {
+                        thing: -1
+                    },
+                    {
+                        thing: 2
+                    },
+                    {
+                        thing: 1
+                    }
+                ];
+                list.sort(plugin.sortByProperty("thing"));
+                expect(list).toEqual([
+                    {
+                        thing: -1
+                    },
+                    {
+                        thing: 1
+                    },
+                    {
+                        thing: 2
+                    }
+                ]);
+            });
+            it("sorts objects with mixed numbers", function () {
+                var list;
+
+                list = [
+                    {
+                        thing: "test"
+                    },
+                    {
+                        thing: "09"
+                    },
+                    {
+                        thing: 1
+                    }
+                ];
+                list.sort(plugin.sortByProperty("thing"));
+
+                // 1 is sorted as a string because it is always compared
+                // to strings.
+                expect(list).toEqual([
+                    {
+                        thing: "09"
+                    },
+                    {
+                        thing: 1
+                    },
+                    {
+                        thing: "test"
                     }
                 ]);
             });
