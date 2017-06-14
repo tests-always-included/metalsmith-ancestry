@@ -2,6 +2,14 @@ Changelog
 =========
 
 
+2017-06-14 - 1.3.0
+------------------
+
+* Use metalsmith-plugin-kit to handle matching files.
+* Removed `.forEach()` to speed up builds with a significant number of files. My crude tests brought a build down from 875ms to 700ms.
+* Documentation update.
+
+
 2017-04-27 - 1.2.1
 ------------------
 
