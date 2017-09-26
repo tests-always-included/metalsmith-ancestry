@@ -2,6 +2,12 @@ Changelog
 =========
 
 
+2017-09-26 - 1.4.0
+------------------
+
+* Added `.memberIndex` and `.siblingIndex` to see where you are in the sorted arrays.
+
+
 2017-06-14 - 1.3.0
 ------------------
 

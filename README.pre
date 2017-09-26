@@ -26,6 +26,7 @@ All of the file objects are assigned an `.ancestry` property, which is an object
 
         // Navigating member files of this folder.
         members: [ ... ],        // All file objects in the same folder.
+        memberIndex: 0,          // The current file's index in members array.
         firstMember: { ... },    // The first member (same as .members[0]).
         lastMember: { ... },     // The last member.
         nextMember: { ... },     // The next member in the list.
@@ -33,6 +34,7 @@ All of the file objects are assigned an `.ancestry` property, which is an object
 
         // Jumping to other folders at the same level.
         siblings: [ ... ],       // One file object per folder. **
+        siblingIndex: 2,         // The current file's index in siblings array.
         firstSibling: { ... },   // The first sibling (same as .siblings[0]).
         lastSibling: { ... },    // The last sibling.
         nextSibling: { ... },    // The next sibling in the list.
@@ -73,6 +75,7 @@ If you were to inspect the `.ancestry` object that relates to `contact/email.htm
         root: «index.html»,
 
         // Navigating member files of this folder.
+        memberIndex: 1,
         members: [
             «contact/index.html»
             «contact/email.html»
@@ -84,6 +87,7 @@ If you were to inspect the `.ancestry` object that relates to `contact/email.htm
         prevMember: «contact/index.html»,
 
         // Jumping to other folders at the same level.
+        siblingIndex: 1,
         siblings: [
             «about/index.html»,
             «contact/index.html»
@@ -114,6 +118,8 @@ If this was generated for the `index.html` within the above file tree, you would
 
     * [About Us](about/) - All about the creators of this site.
     * [Contact Information](contact/) - The various ways you can reach us.
+
+Another way to use this same information would be to see the amount of progress through a particular set of instructions. With a guide and each step being a page, you could use `.memberIndex` or `.siblingIndex` to determine how close the user is to completion.
 
 You could also use this for instruction pages or in a gallery.  If doing that, I would recommend [metalsmith-mustache-metadata]; this example requires that plugin to work.
 

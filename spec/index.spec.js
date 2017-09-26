@@ -171,6 +171,10 @@ describe("metalsmith-ancestry", () => {
                 expect(files["test/folder/index.jade"].ancestry.lastSibling).toBe("«test/folder2/index.htm»");
                 expect(files["test/index.md"].ancestry.lastSibling).toBe("«test/index.md»");
             });
+            it("sets memberIndex", () => {
+                expect(files["index.html"].ancestry.memberIndex).toBe(0);
+                expect(files["test/image.gif"].ancestry.memberIndex).toBe(1);
+            });
             it("sets members", () => {
                 expect(files["index.html"].ancestry.members).toEqual([
                     "«index.html»"
@@ -221,6 +225,11 @@ describe("metalsmith-ancestry", () => {
             it("sets self", () => {
                 expect(files["index.html"].ancestry.self).toBe("«index.html»");
                 expect(files["test/thing.htm"].ancestry.self).toBe("«test/thing.htm»");
+            });
+            it("sets siblingIndex", () => {
+                expect(files["index.html"].ancestry.siblingIndex).toBe(0);
+                expect(files["test/folder/index.jade"].ancestry.siblingIndex).toBe(0);
+                expect(files["test/folder2/big.html"].ancestry.siblingIndex).toBe(1);
             });
             it("sets siblings", () => {
                 expect(files["test/image.gif"].ancestry.siblings).toEqual([
