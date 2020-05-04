@@ -31,7 +31,7 @@
         "metalsmith-plugin-kit": "^1.0.1"
     },
     "devDependencies": {
-        "codecov": "^2.3.0",
+        "codecov": "^3.6.5",
         "eslint": "^4.7.2",
         "istanbul": "^0.4.5",
         "jasmine": "^2.8.0",
