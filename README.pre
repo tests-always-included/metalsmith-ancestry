@@ -42,6 +42,7 @@ All of the file objects are assigned an `.ancestry` property, which is an object
 
         // Descending in the directory tree.
         children: [ ... ],       // First member of each descendent. **
+        childrenByName: { ... }, // First member of each descendent, by filename. **
         firstChild: { ... },     // The first child (same as .children[0]).
         lastChild: { ... }       // The last child.
     }
@@ -101,6 +102,10 @@ If you were to inspect the `.ancestry` object that relates to `contact/email.htm
         children: [
             «contact/live-chat/index.html»,
             «contact/location/index.html»
+        ],
+        childrenByName: {
+            "live-chat": «contact/live-chat/index.html»,
+            "location": «contact/location/index.html»
         },
         firstChild: «contact/live-chat/index.html»,
         lastChild: «contact/location/index.html»
