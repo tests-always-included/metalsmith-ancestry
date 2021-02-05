@@ -24,14 +24,14 @@ All of the file objects are assigned an `.ancestry` property, which is an object
         // Up in the hierarchy.
         parent: { ... },         // Parent of this file object. **
 
-        // Navigating member files of this folder.
-        members: [ ... ],        // All file objects in the same folder.
+        // Navigating adjacent folders sharing the same parent.
+        members: [ ... ],        // All file objects in the same parent folder.
         firstMember: { ... },    // The first member (same as .members[0]).
         lastMember: { ... },     // The last member.
         nextMember: { ... },     // The next member in the list.
         prevMember: { ... },     // The previous member in the list.
 
-        // Jumping to other folders at the same level.
+        // Jumping to other files within the same folder.
         siblings: [ ... ],       // One file object per folder. **
         firstSibling: { ... },   // The first sibling (same as .siblings[0]).
         lastSibling: { ... },    // The last sibling.
@@ -39,13 +39,13 @@ All of the file objects are assigned an `.ancestry` property, which is an object
         prevSibling: { ... },    // The previous sibling in the list.
 
         // Descending in the directory tree.
-        children: [ ... ],       // First member of each descendent. **
-        childrenByName: { ... }, // First member of each descendent, by filename. **
+        children: [ ... ],       // First item of each descendent. **
+        childrenByName: { ... }, // First item of each descendent, by filename. **
         firstChild: { ... },     // The first child (same as .children[0]).
         lastChild: { ... }       // The last child.
     }
 
-`**` - These items are arrays that contain single file objects that "stand for" the entire folder. The file that is there is the first one sorted, so it would always appear as `.members[0]`. This is because one can not link to a folder because there are no folders in Metalsmith - only files.
+`**` - These items are arrays that contain single file objects that "stand for" the entire folder. The file that is there is the first one sorted, so it would always appear as `.children[0]`. This is because one can not link to a folder because there are no folders in Metalsmith - only files.
 
 Using this `ancestry` object, you can navigate to other file objects that would be supplied to any Metalsmith plugin.  When you use [metalsmith-relative-links] and supply its link function a file object, it can return the URI necessary to link two resources together.
 
@@ -73,26 +73,26 @@ If you were to inspect the `.ancestry` object that relates to `contact/email.htm
         parent: «index.html»,
         root: «index.html»,
 
-        // Navigating member files of this folder.
-        members: [
+        // Navigating files of this folder.
+        siblings: [
             «contact/index.html»
             «contact/email.html»
             «contact/in-person.html»
         ],
-        firstMember: «contact/index.html»,
-        lastMember: «contact/in-person.html»,
-        nextMember: «contact/in-person.html»,
-        prevMember: «contact/index.html»,
+        firstSibling: «contact/index.html»,
+        lastSibling: «contact/in-person.html»,
+        nextSibling: «contact/in-person.html»,
+        previousSibling: «contact/index.html»,
 
         // Jumping to other folders at the same level.
-        siblings: [
+        members: [
             «about/index.html»,
             «contact/index.html»
         ],
-        firstSibling: «about/index.html»,
-        lastSibling: «contact/index.html»,
-        nextSibling: null,
-        prevSibling: «about/index.html»,
+        firstMember: «about/index.html»,
+        lastMember: «contact/index.html»,
+        nextMember: null,
+        previousMember: «about/index.html»,
 
         // Descending in the directory tree.
         children: [
@@ -120,27 +120,31 @@ If this was generated for the `index.html` within the above file tree, you would
     * [About Us](about/) - All about the creators of this site.
     * [Contact Information](contact/) - The various ways you can reach us.
 
-You could also use this for instruction pages or in a gallery.  If doing that, I would recommend [metalsmith-mustache-metadata]; this example requires that plugin to work.
+You could also use this for instruction pages or in a gallery.
 
 This is what you'd use if you jump from page to page in the same folder.
 
-    {{#ancestry.previousMember?}}
-    [Previous](ancestry.link.to ancestry.previousMember)
-    {{/ancestry.previousMember?}}
-
-    {{#ancestry.nextMember?}}
-    [Next](ancestry.link.to ancestry.nextMember)
-    {{/ancestry.nextMember?}}
-
-If you keep your pages separated into different folders, the syntax is almost identical.
+    This example uses help from metalsmith-mustache-metadata, which adds extra properties to metadata.
 
     {{#ancestry.previousSibling?}}
-    [Previous](ancestry.link.to ancestry.previousSibling)
+    [Previous]({{link.to ancestry.previousSibling}})
     {{/ancestry.previousSibling?}}
 
     {{#ancestry.nextSibling?}}
-    [Next](ancestry.link.to ancestry.nextSibling)
+    [Next]({{link.to ancestry.nextSibling}})
     {{/ancestry.nextSibling?}}
+
+If you keep your pages separated into different folders, the syntax is almost identical.
+
+    This example uses Handlebars syntax, leveraging the #if helper.
+
+    {{#if ancestry.previousMember}}
+    [Previous]({{link.to ancestry.previousMember}})
+    {{/if}}
+
+    {{#if ancestry.nextMember}}
+    [Next]({{link.to ancestry.nextMember}})
+    {{/if}}
 
 
 Installation
