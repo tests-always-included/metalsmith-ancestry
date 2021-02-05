@@ -26,6 +26,7 @@ All of the file objects are assigned an `.ancestry` property, which is an object
 
         // Navigating member files of this folder.
         members: [ ... ],        // All file objects in the same folder.
+        memberIndex: 0,          // The current file's index in members array.
         firstMember: { ... },    // The first member (same as .members[0]).
         lastMember: { ... },     // The last member.
         nextMember: { ... },     // The next member in the list.
@@ -33,6 +34,7 @@ All of the file objects are assigned an `.ancestry` property, which is an object
 
         // Jumping to other folders at the same level.
         siblings: [ ... ],       // One file object per folder. **
+        siblingIndex: 2,         // The current file's index in siblings array.
         firstSibling: { ... },   // The first sibling (same as .siblings[0]).
         lastSibling: { ... },    // The last sibling.
         nextSibling: { ... },    // The next sibling in the list.
@@ -74,6 +76,7 @@ If you were to inspect the `.ancestry` object that relates to `contact/email.htm
         root: «index.html»,
 
         // Navigating member files of this folder.
+        memberIndex: 1,
         members: [
             «contact/index.html»
             «contact/email.html»
@@ -85,6 +88,7 @@ If you were to inspect the `.ancestry` object that relates to `contact/email.htm
         prevMember: «contact/index.html»,
 
         // Jumping to other folders at the same level.
+        siblingIndex: 1,
         siblings: [
             «about/index.html»,
             «contact/index.html»
@@ -120,27 +124,33 @@ If this was generated for the `index.html` within the above file tree, you would
     * [About Us](about/) - All about the creators of this site.
     * [Contact Information](contact/) - The various ways you can reach us.
 
-You could also use this for instruction pages or in a gallery.  If doing that, I would recommend [metalsmith-mustache-metadata]; this example requires that plugin to work.
+Another way to use this same information would be to see the amount of progress through a particular set of instructions. With a guide and each step being a page, you could use `.memberIndex` or `.siblingIndex` to determine how close the user is to completion.
 
-This is what you'd use if you jump from page to page in the same folder.
+You could also use this for instruction pages or in a gallery.
+
+    This example uses the #if helper from Handlebars and navigates pages in the same folder.
+    Link generation is done using metalsmith-relative-links.
+
+    {{#if ancestry.previousSibling}}
+    [Previous]({{link.to ancestry.previousSibling}})
+    {{/if}}
+
+    {{#if ancestry.nextSibling}}
+    [Next]({{link.to ancestry.nextSibling}})
+    {{/if}}
+
+
+    If you use another system, maybe metalsmith-mustache-metadata can help.
+    This example uses that plugin and links to folders that have a shared parent folder.
+    Link generation is done using metalsmith-relative-links.
 
     {{#ancestry.previousMember?}}
-    [Previous](ancestry.link.to ancestry.previousMember)
+    [Previous]({{link.to ancestry.previousMember}})
     {{/ancestry.previousMember?}}
 
     {{#ancestry.nextMember?}}
-    [Next](ancestry.link.to ancestry.nextMember)
+    [Next]({{link.to ancestry.nextMember}})
     {{/ancestry.nextMember?}}
-
-If you keep your pages separated into different folders, the syntax is almost identical.
-
-    {{#ancestry.previousSibling?}}
-    [Previous](ancestry.link.to ancestry.previousSibling)
-    {{/ancestry.previousSibling?}}
-
-    {{#ancestry.nextSibling?}}
-    [Next](ancestry.link.to ancestry.nextSibling)
-    {{/ancestry.nextSibling?}}
 
 
 Installation
@@ -313,7 +323,7 @@ Metalsmith Ancestry - Generate a hierarchical listing of files based on
 where they are in the file tree. Add useful navigation metadata to files
 in your Metalsmith build.
 
-**Example**
+**Example**  
 ```js
 var ancestry = require("metalsmith-ancestry");
 
@@ -338,7 +348,9 @@ metalsmith.use(ancestry({
         * [~assignMemberLinks(ancestry)](#module_metalsmith-ancestry--module.exports..assignMemberLinks)
         * [~assignChildren(filesByFolder, sortFn, options, ancestry)](#module_metalsmith-ancestry--module.exports..assignChildren)
         * [~assignSiblings(options, ancestry)](#module_metalsmith-ancestry--module.exports..assignSiblings)
+        * [~assignIndexes(ancestry)](#module_metalsmith-ancestry--module.exports..assignIndexes)
         * [~metalsmithFile](#module_metalsmith-ancestry--module.exports..metalsmithFile) : <code>Object</code>
+        * [~metalsmithFileMap](#module_metalsmith-ancestry--module.exports..metalsmithFileMap) : <code>Object.&lt;string, metalsmithFile&gt;</code>
         * [~ancestryOptions](#module_metalsmith-ancestry--module.exports..ancestryOptions) : <code>Object</code>
         * [~ancestry](#module_metalsmith-ancestry--module.exports..ancestry) : <code>Object</code>
         * [~ancestrySortBy](#module_metalsmith-ancestry--module.exports..ancestrySortBy) : <code>function</code> \| <code>string</code> \| <code>Array.&lt;string&gt;</code> \| <code>null</code>
@@ -348,7 +360,7 @@ metalsmith.use(ancestry({
 ### module.exports(options) ⇒ <code>function</code> ⏏
 Factory to build middleware for Metalsmith.
 
-**Kind**: Exported function
+**Kind**: Exported function  
 **Params**
 
 - options <code>module:metalsmith-ancestry~options</code>
@@ -358,7 +370,7 @@ Factory to build middleware for Metalsmith.
 #### module.exports~sortCombine(sorts) ⇒ <code>function</code>
 Return a function that chains together multiple sort functions.
 
-**Kind**: inner method of [<code>module.exports</code>](#exp_module_metalsmith-ancestry--module.exports)
+**Kind**: inner method of [<code>module.exports</code>](#exp_module_metalsmith-ancestry--module.exports)  
 **Params**
 
 - sorts <code>Array.&lt;function()&gt;</code>
@@ -369,7 +381,7 @@ Return a function that chains together multiple sort functions.
 Returns the right value from sorting two strings.  Strings are sorted
 case-insensitively.
 
-**Kind**: inner method of [<code>module.exports</code>](#exp_module_metalsmith-ancestry--module.exports)
+**Kind**: inner method of [<code>module.exports</code>](#exp_module_metalsmith-ancestry--module.exports)  
 **Params**
 
 - a <code>string</code>
@@ -380,7 +392,7 @@ case-insensitively.
 #### module.exports~sortReverse(sortFunction) ⇒ <code>function</code>
 Reverses a sort function.
 
-**Kind**: inner method of [<code>module.exports</code>](#exp_module_metalsmith-ancestry--module.exports)
+**Kind**: inner method of [<code>module.exports</code>](#exp_module_metalsmith-ancestry--module.exports)  
 **Params**
 
 - sortFunction <code>function</code>
@@ -392,7 +404,7 @@ Return a function that will sort file objects by a property. This will
 sort numbers appropriately as long as both values are numbers. Otherwise,
 this falls back to a string-based sort.
 
-**Kind**: inner method of [<code>module.exports</code>](#exp_module_metalsmith-ancestry--module.exports)
+**Kind**: inner method of [<code>module.exports</code>](#exp_module_metalsmith-ancestry--module.exports)  
 **Params**
 
 - propName <code>string</code>
@@ -402,7 +414,7 @@ this falls back to a string-based sort.
 #### module.exports~sortByMatchingFilename(filesFirst, filesFirstOptions, ancestryProperty) ⇒ <code>function</code>
 Files that match should be sorted first.
 
-**Kind**: inner method of [<code>module.exports</code>](#exp_module_metalsmith-ancestry--module.exports)
+**Kind**: inner method of [<code>module.exports</code>](#exp_module_metalsmith-ancestry--module.exports)  
 **Params**
 
 - filesFirst <code>module:metalsmith-plugin-kit~matchList</code>
@@ -414,7 +426,7 @@ Files that match should be sorted first.
 #### module.exports~buildSortFunction(sortBy, reverse, filesFirst, filesFirstOptions, ancestryProperty) ⇒ <code>function</code>
 Create the sorting function using the options that were supplied.
 
-**Kind**: inner method of [<code>module.exports</code>](#exp_module_metalsmith-ancestry--module.exports)
+**Kind**: inner method of [<code>module.exports</code>](#exp_module_metalsmith-ancestry--module.exports)  
 **Params**
 
 - sortBy [<code>ancestrySortBy</code>](#module_metalsmith-ancestry--module.exports..ancestrySortBy)
@@ -429,7 +441,7 @@ Create the sorting function using the options that were supplied.
 Sort all members so they are in the right order before we
 determine the nextMember and prevMember links.
 
-**Kind**: inner method of [<code>module.exports</code>](#exp_module_metalsmith-ancestry--module.exports)
+**Kind**: inner method of [<code>module.exports</code>](#exp_module_metalsmith-ancestry--module.exports)  
 **Params**
 
 - filesByFolder <code>Object.&lt;string, Array&gt;</code> - Ancestories grouped by their folder.
@@ -440,7 +452,7 @@ determine the nextMember and prevMember links.
 #### module.exports~assignParent(filesByFolder, ancestry)
 Link to the parent if one exists.
 
-**Kind**: inner method of [<code>module.exports</code>](#exp_module_metalsmith-ancestry--module.exports)
+**Kind**: inner method of [<code>module.exports</code>](#exp_module_metalsmith-ancestry--module.exports)  
 **Params**
 
 - filesByFolder <code>Object.&lt;string, Array&gt;</code> - Ancestories grouped by their folder.
@@ -452,7 +464,7 @@ Link to the parent if one exists.
 Follow parent links up until there are no more, then link directly
 to the root.
 
-**Kind**: inner method of [<code>module.exports</code>](#exp_module_metalsmith-ancestry--module.exports)
+**Kind**: inner method of [<code>module.exports</code>](#exp_module_metalsmith-ancestry--module.exports)  
 **Params**
 
 - options <code>module:metalsmith-ancestry~options</code>
@@ -463,7 +475,7 @@ to the root.
 #### module.exports~assignRelativeLinks(ancestry, suffix, list)
 Assigns the next, prev, first, last links for a given type.
 
-**Kind**: inner method of [<code>module.exports</code>](#exp_module_metalsmith-ancestry--module.exports)
+**Kind**: inner method of [<code>module.exports</code>](#exp_module_metalsmith-ancestry--module.exports)  
 **Params**
 
 - ancestry <code>ancestry</code>
@@ -475,7 +487,7 @@ Assigns the next, prev, first, last links for a given type.
 #### module.exports~assignMemberLinks(ancestry)
 Assign the member related links
 
-**Kind**: inner method of [<code>module.exports</code>](#exp_module_metalsmith-ancestry--module.exports)
+**Kind**: inner method of [<code>module.exports</code>](#exp_module_metalsmith-ancestry--module.exports)  
 **Params**
 
 - ancestry <code>ancestry</code>
@@ -487,7 +499,7 @@ Makes the list of children for each file object. The work
 is only done on the first member and copied to all subsequent
 members.
 
-**Kind**: inner method of [<code>module.exports</code>](#exp_module_metalsmith-ancestry--module.exports)
+**Kind**: inner method of [<code>module.exports</code>](#exp_module_metalsmith-ancestry--module.exports)  
 **Params**
 
 - filesByFolder <code>Object.&lt;string, Array&gt;</code> - Ancestories grouped by their folder.
@@ -500,10 +512,20 @@ members.
 #### module.exports~assignSiblings(options, ancestry)
 Siblings is simply a copy of the parent's children.
 
-**Kind**: inner method of [<code>module.exports</code>](#exp_module_metalsmith-ancestry--module.exports)
+**Kind**: inner method of [<code>module.exports</code>](#exp_module_metalsmith-ancestry--module.exports)  
 **Params**
 
 - options <code>module:metalsmith-ancestry~options</code>
+- ancestry <code>ancestry</code>
+
+<a name="module_metalsmith-ancestry--module.exports..assignIndexes"></a>
+
+#### module.exports~assignIndexes(ancestry)
+Assign siblingIndex and memberIndex
+
+**Kind**: inner method of [<code>module.exports</code>](#exp_module_metalsmith-ancestry--module.exports)  
+**Params**
+
 - ancestry <code>ancestry</code>
 
 <a name="module_metalsmith-ancestry--module.exports..metalsmithFile"></a>
@@ -511,28 +533,34 @@ Siblings is simply a copy of the parent's children.
 #### module.exports~metalsmithFile : <code>Object</code>
 This is a typical file object from Metalsmith.
 
-**Kind**: inner typedef of [<code>module.exports</code>](#exp_module_metalsmith-ancestry--module.exports)
+**Kind**: inner typedef of [<code>module.exports</code>](#exp_module_metalsmith-ancestry--module.exports)  
 **Properties**
 
-- contents <code>Buffer</code>
-- mode <code>string</code>
+- contents <code>Buffer</code>  
+- mode <code>string</code>  
 
+<a name="module_metalsmith-ancestry--module.exports..metalsmithFileMap"></a>
+
+#### module.exports~metalsmithFileMap : <code>Object.&lt;string, metalsmithFile&gt;</code>
+An object whose values are metalsmithFile objects
+
+**Kind**: inner typedef of [<code>module.exports</code>](#exp_module_metalsmith-ancestry--module.exports)  
 <a name="module_metalsmith-ancestry--module.exports..ancestryOptions"></a>
 
 #### module.exports~ancestryOptions : <code>Object</code>
 Options for this plugin.
 
-**Kind**: inner typedef of [<code>module.exports</code>](#exp_module_metalsmith-ancestry--module.exports)
-**See**: [https://github.com/fidian/metalsmith-plugin-kit](https://github.com/fidian/metalsmith-plugin-kit)
+**Kind**: inner typedef of [<code>module.exports</code>](#exp_module_metalsmith-ancestry--module.exports)  
+**See**: [https://github.com/fidian/metalsmith-plugin-kit](https://github.com/fidian/metalsmith-plugin-kit)  
 **Properties**
 
-- ancestryProperty <code>string</code> - The metadata property name to assign
-- match <code>module:metalsmith-plugin-kit~matchList</code> - Files to match. Defaults to all files.
-- matchOptions <code>module:metalsmith-plugin-kit~matchOptions</code> - Options controlling globbing behavior.
-- reverse <code>boolean</code>
-- sortBy [<code>ancestrySortBy</code>](#module_metalsmith-ancestry--module.exports..ancestrySortBy) - How to sort siblings.
-- sortFilesFirst <code>module:metalsmith-plugin-kit~matchList</code> - What files should come first in the sibling list. Defaults to index files with `htm`, `html`, `jade`, or `md` extensions.
-- sortFilesFirstOptions <code>module:metalsmith-plugin-kit~matchOptions</code> - Options controlling the globbing behavior of `sortFilesFirst`.
+- ancestryProperty <code>string</code> - The metadata property name to assign  
+- match <code>module:metalsmith-plugin-kit~matchList</code> - Files to match. Defaults to all files.  
+- matchOptions <code>module:metalsmith-plugin-kit~matchOptions</code> - Options controlling globbing behavior.  
+- reverse <code>boolean</code>  
+- sortBy [<code>ancestrySortBy</code>](#module_metalsmith-ancestry--module.exports..ancestrySortBy) - How to sort siblings.  
+- sortFilesFirst <code>module:metalsmith-plugin-kit~matchList</code> - What files should come first in the sibling list. Defaults to index files with `htm`, `html`, `jade`, or `md` extensions.  
+- sortFilesFirstOptions <code>module:metalsmith-plugin-kit~matchOptions</code> - Options controlling the globbing behavior of `sortFilesFirst`.  
 
 <a name="module_metalsmith-ancestry--module.exports..ancestry"></a>
 
@@ -540,34 +568,37 @@ Options for this plugin.
 This represents the type of object that is added as metadata to each
 of the file objects.
 
-**Kind**: inner typedef of [<code>module.exports</code>](#exp_module_metalsmith-ancestry--module.exports)
+**Kind**: inner typedef of [<code>module.exports</code>](#exp_module_metalsmith-ancestry--module.exports)  
 **Properties**
 
-- basename <code>string</code> - file.ext
-- children [<code>Array.&lt;metalsmithFile&gt;</code>](#module_metalsmith-ancestry--module.exports..metalsmithFile) - First member in subfolders.
-- firstChild [<code>metalsmithFile</code>](#module_metalsmith-ancestry--module.exports..metalsmithFile)
-- firstMember [<code>metalsmithFile</code>](#module_metalsmith-ancestry--module.exports..metalsmithFile)
-- firstSibling [<code>metalsmithFile</code>](#module_metalsmith-ancestry--module.exports..metalsmithFile)
-- lastChild [<code>metalsmithFile</code>](#module_metalsmith-ancestry--module.exports..metalsmithFile)
-- lastMember [<code>metalsmithFile</code>](#module_metalsmith-ancestry--module.exports..metalsmithFile)
-- lastSibling [<code>metalsmithFile</code>](#module_metalsmith-ancestry--module.exports..metalsmithFile)
-- members [<code>Array.&lt;metalsmithFile&gt;</code>](#module_metalsmith-ancestry--module.exports..metalsmithFile) - Files in same directory.
-- nextChild [<code>metalsmithFile</code>](#module_metalsmith-ancestry--module.exports..metalsmithFile)
-- nextMember [<code>metalsmithFile</code>](#module_metalsmith-ancestry--module.exports..metalsmithFile)
-- nextSibling [<code>metalsmithFile</code>](#module_metalsmith-ancestry--module.exports..metalsmithFile)
-- parent [<code>metalsmithFile</code>](#module_metalsmith-ancestry--module.exports..metalsmithFile)
-- path <code>string</code> - folder/file.ext
-- prevChild [<code>metalsmithFile</code>](#module_metalsmith-ancestry--module.exports..metalsmithFile)
-- prevMember [<code>metalsmithFile</code>](#module_metalsmith-ancestry--module.exports..metalsmithFile)
-- prevSibling [<code>metalsmithFile</code>](#module_metalsmith-ancestry--module.exports..metalsmithFile)
-- root [<code>metalsmithFile</code>](#module_metalsmith-ancestry--module.exports..metalsmithFile) - The top-most parent's parent's parent's parent.
-- self [<code>metalsmithFile</code>](#module_metalsmith-ancestry--module.exports..metalsmithFile)
-- siblings [<code>Array.&lt;metalsmithFile&gt;</code>](#module_metalsmith-ancestry--module.exports..metalsmithFile) - First member in adjacent directories.
+- basename <code>string</code> - file.ext  
+- children [<code>Array.&lt;metalsmithFile&gt;</code>](#module_metalsmith-ancestry--module.exports..metalsmithFile) - First member in subfolders.  
+- childrenByName [<code>metalsmithFileMap</code>](#module_metalsmith-ancestry--module.exports..metalsmithFileMap) - Find specific child folder.  
+- firstChild [<code>metalsmithFile</code>](#module_metalsmith-ancestry--module.exports..metalsmithFile)  
+- firstMember [<code>metalsmithFile</code>](#module_metalsmith-ancestry--module.exports..metalsmithFile)  
+- firstSibling [<code>metalsmithFile</code>](#module_metalsmith-ancestry--module.exports..metalsmithFile)  
+- lastChild [<code>metalsmithFile</code>](#module_metalsmith-ancestry--module.exports..metalsmithFile)  
+- lastMember [<code>metalsmithFile</code>](#module_metalsmith-ancestry--module.exports..metalsmithFile)  
+- lastSibling [<code>metalsmithFile</code>](#module_metalsmith-ancestry--module.exports..metalsmithFile)  
+- memberIndex <code>number</code>  
+- members [<code>Array.&lt;metalsmithFile&gt;</code>](#module_metalsmith-ancestry--module.exports..metalsmithFile) - Files in same directory.  
+- nextChild [<code>metalsmithFile</code>](#module_metalsmith-ancestry--module.exports..metalsmithFile)  
+- nextMember [<code>metalsmithFile</code>](#module_metalsmith-ancestry--module.exports..metalsmithFile)  
+- nextSibling [<code>metalsmithFile</code>](#module_metalsmith-ancestry--module.exports..metalsmithFile)  
+- parent [<code>metalsmithFile</code>](#module_metalsmith-ancestry--module.exports..metalsmithFile)  
+- path <code>string</code> - folder/file.ext  
+- prevChild [<code>metalsmithFile</code>](#module_metalsmith-ancestry--module.exports..metalsmithFile)  
+- prevMember [<code>metalsmithFile</code>](#module_metalsmith-ancestry--module.exports..metalsmithFile)  
+- prevSibling [<code>metalsmithFile</code>](#module_metalsmith-ancestry--module.exports..metalsmithFile)  
+- root [<code>metalsmithFile</code>](#module_metalsmith-ancestry--module.exports..metalsmithFile) - The top-most parent's parent's parent's parent.  
+- self [<code>metalsmithFile</code>](#module_metalsmith-ancestry--module.exports..metalsmithFile)  
+- siblingIndex <code>number</code>  
+- siblings [<code>Array.&lt;metalsmithFile&gt;</code>](#module_metalsmith-ancestry--module.exports..metalsmithFile) - First member in adjacent directories.  
 
 <a name="module_metalsmith-ancestry--module.exports..ancestrySortBy"></a>
 
 #### module.exports~ancestrySortBy : <code>function</code> \| <code>string</code> \| <code>Array.&lt;string&gt;</code> \| <code>null</code>
-**Kind**: inner typedef of [<code>module.exports</code>](#exp_module_metalsmith-ancestry--module.exports)
+**Kind**: inner typedef of [<code>module.exports</code>](#exp_module_metalsmith-ancestry--module.exports)  
 
 
 Development

@@ -126,27 +126,31 @@ If this was generated for the `index.html` within the above file tree, you would
 
 Another way to use this same information would be to see the amount of progress through a particular set of instructions. With a guide and each step being a page, you could use `.memberIndex` or `.siblingIndex` to determine how close the user is to completion.
 
-You could also use this for instruction pages or in a gallery.  If doing that, I would recommend [metalsmith-mustache-metadata]; this example requires that plugin to work.
+You could also use this for instruction pages or in a gallery.
 
-This is what you'd use if you jump from page to page in the same folder.
+    This example uses the #if helper from Handlebars and navigates pages in the same folder.
+    Link generation is done using metalsmith-relative-links.
+
+    {{#if ancestry.previousSibling}}
+    [Previous]({{link.to ancestry.previousSibling}})
+    {{/if}}
+
+    {{#if ancestry.nextSibling}}
+    [Next]({{link.to ancestry.nextSibling}})
+    {{/if}}
+
+
+    If you use another system, maybe metalsmith-mustache-metadata can help.
+    This example uses that plugin and links to folders that have a shared parent folder.
+    Link generation is done using metalsmith-relative-links.
 
     {{#ancestry.previousMember?}}
-    [Previous](ancestry.link.to ancestry.previousMember)
+    [Previous]({{link.to ancestry.previousMember}})
     {{/ancestry.previousMember?}}
 
     {{#ancestry.nextMember?}}
-    [Next](ancestry.link.to ancestry.nextMember)
+    [Next]({{link.to ancestry.nextMember}})
     {{/ancestry.nextMember?}}
-
-If you keep your pages separated into different folders, the syntax is almost identical.
-
-    {{#ancestry.previousSibling?}}
-    [Previous](ancestry.link.to ancestry.previousSibling)
-    {{/ancestry.previousSibling?}}
-
-    {{#ancestry.nextSibling?}}
-    [Next](ancestry.link.to ancestry.nextSibling)
-    {{/ancestry.nextSibling?}}
 
 
 Installation
