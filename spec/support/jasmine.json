@@ -4,8 +4,7 @@
     "**/*[sS]pec.js"
   ],
   "helpers": [
-    "helper/**/*.js",
-    "../node_modules/jasmine-test-helpers/lib/**/*.js"
+    "helper/**/*.js"
   ],
   "stopSpecOnExpectationFailure": false,
   "random": false
